@@ -28,8 +28,8 @@ interface TocNode {
 
 /** Build a forest from the flat TOC. parent_entry_id may dangle (parent not
  *  in the list); those nodes become roots. order_index already gives a stable
- *  order within each parent. */
-function buildTocTree(entries: TocEntry[]): TocNode[] {
+ *  order within each parent. Exported for tests. */
+export function buildTocTree(entries: TocEntry[]): TocNode[] {
   const byId = new Map<string, TocNode>();
   const roots: TocNode[] = [];
   for (const entry of entries) {

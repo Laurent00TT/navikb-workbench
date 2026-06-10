@@ -26,6 +26,8 @@ interface EvidenceInspectorProps {
   loadPageImage?: (docId: string, pageNum: number) => Promise<string>;
   selectedRange?: PageRangePreview | null;
   pageError?: string;
+  /** Non-error context about the current preview (e.g. a clamped range). */
+  pageNotice?: string;
   /** Whether the inspected page's document has a retained source PDF. */
   hasSource?: boolean;
   /** Open that source PDF in a new tab. */
@@ -100,6 +102,7 @@ export function EvidenceInspector({
   loadPageImage,
   selectedRange = null,
   pageError = "",
+  pageNotice = "",
   hasSource = false,
   onOpenSource
 }: EvidenceInspectorProps) {
@@ -216,6 +219,7 @@ export function EvidenceInspector({
         </div>
       </div>
       {pageError ? <Banner kind="error" size="sm">{pageError}</Banner> : null}
+      {pageNotice ? <Banner kind="info" size="sm">{pageNotice}</Banner> : null}
 
       {selectedPage ? (
         <div className="page-preview">

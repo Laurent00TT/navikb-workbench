@@ -13,10 +13,17 @@ import type {
 
 type ApiClient = ReturnType<typeof createApiClient>;
 
+/** The core rejects range_preview requests spanning more than 20 pages.
+ *  Suggested fetch targets can exceed this (a section hit's coverage plus
+ *  the navigator's window expansion), so requests must be clamped. */
+const RANGE_PREVIEW_MAX_PAGES = 20;
+
 interface InspectedPage {
   selectedPage: PagePreview | null;
   selectedRange: PageRangePreview | null;
   pageError: string;
+  /** Non-error context about the current preview (e.g. a clamped range). */
+  pageNotice: string;
   selectEvidence: (hit: EvidenceHit) => Promise<void>;
   selectNav: (hit: NavHit) => Promise<void>;
   selectFetch: (target: FetchTarget) => Promise<void>;
@@ -43,11 +50,13 @@ export function useInspectedPage(
   const [selectedPage, setSelectedPage] = useState<PagePreview | null>(null);
   const [selectedRange, setSelectedRange] = useState<PageRangePreview | null>(null);
   const [pageError, setPageError] = useState("");
+  const [pageNotice, setPageNotice] = useState("");
 
   const selectEvidence = useCallback(
     async (hit: EvidenceHit) => {
       if (!api) return;
       setPageError("");
+      setPageNotice("");
       try {
         const page = await api.pagePreview(hit.doc_id, hit.page_num);
         setSelectedPage(page);
@@ -63,6 +72,7 @@ export function useInspectedPage(
     async (hit: NavHit) => {
       if (!api) return;
       setPageError("");
+      setPageNotice("");
       try {
         const page = await api.pagePreview(hit.doc_id, hit.page_start);
         setSelectedPage(page);
@@ -80,14 +90,24 @@ export function useInspectedPage(
     async (target: FetchTarget) => {
       if (!api) return;
       setPageError("");
+      setPageNotice("");
+      const pageEnd = Math.min(
+        target.page_end,
+        target.page_start + RANGE_PREVIEW_MAX_PAGES - 1
+      );
       try {
-        const range = await api.rangePreview(target.doc_id, target.page_start, target.page_end);
+        const range = await api.rangePreview(target.doc_id, target.page_start, pageEnd);
         setSelectedRange(range);
         const first = range.pages[0] ?? null;
         setSelectedPage(first);
         if (!first) {
           setPageError(
-            `No previewable pages in ${target.page_start}–${target.page_end} — page text payloads are unavailable.`
+            `No previewable pages in ${target.page_start}–${pageEnd} — page text payloads are unavailable.`
+          );
+        } else if (pageEnd < target.page_end) {
+          setPageNotice(
+            `Loaded pages ${target.page_start}–${pageEnd} of the suggested ${target.page_start}–${target.page_end} ` +
+              `(previews load at most ${RANGE_PREVIEW_MAX_PAGES} pages at once). Step forward to keep reading.`
           );
         }
       } catch (error) {
@@ -101,19 +121,12 @@ export function useInspectedPage(
     async (entry: TocEntry, doc: DocumentItem) => {
       if (!api) return;
       setPageError("");
+      setPageNotice("");
       try {
-        if (entry.page_end > entry.page_start) {
-          const range = await api.rangePreview(doc.doc_id, entry.page_start, entry.page_end);
-          setSelectedRange(range);
-          const first = range.pages[0] ?? null;
-          setSelectedPage(first);
-          if (!first) {
-            setPageError(
-              `No previewable pages in ${entry.page_start}–${entry.page_end} — page text payloads are unavailable.`
-            );
-          }
-          return;
-        }
+        // Jump to the entry's first page — same semantics as selectNav.
+        // Multi-page entries are no longer fetched as a range: sections now
+        // cover whole chapters, which would trip the core's 20-page
+        // range_preview cap, and a single page keeps clicks fast.
         const page = await api.pagePreview(doc.doc_id, entry.page_start);
         setSelectedPage(page);
         setSelectedRange(null);
@@ -142,6 +155,9 @@ export function useInspectedPage(
         setSelectedPage(page);
         setSelectedRange(null);
         setPageError("");
+        // The notice describes the loaded range; once stepping leaves it,
+        // the context is gone too.
+        setPageNotice("");
       } catch (error) {
         setPageError(readableError(error));
       }
@@ -162,12 +178,14 @@ export function useInspectedPage(
     setSelectedPage(null);
     setSelectedRange(null);
     setPageError("");
+    setPageNotice("");
   }, []);
 
   return {
     selectedPage,
     selectedRange,
     pageError,
+    pageNotice,
     selectEvidence,
     selectNav,
     selectFetch,

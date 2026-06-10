@@ -128,6 +128,7 @@ export function App() {
         selectedPage={inspected.selectedPage}
         selectedRange={inspected.selectedRange}
         pageError={inspected.pageError}
+        pageNotice={inspected.pageNotice}
         onPageStep={inspected.stepSelectedPage}
         onCopyCitation={inspected.copyCitation}
         loadPageImage={session.api ? (id, n) => session.api!.pageImageBlobUrl(id, n) : undefined}

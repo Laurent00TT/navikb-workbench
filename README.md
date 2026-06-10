@@ -36,6 +36,14 @@ npm run dev          # Vite dev server at http://127.0.0.1:5173/ui/
                      # (its proxy forwards /ui/api + /ingestion to the core)
 ```
 
+Sign in with a user token, created on the **core** side — the plaintext is
+shown once on creation, so store it in a password manager:
+
+```bash
+# run inside the core repo
+python scripts/manage_users.py create <username> --role admin
+```
+
 Point at a non-default core with `KB_UI_API_TARGET`:
 
 ```bash

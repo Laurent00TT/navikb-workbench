@@ -33,6 +33,14 @@ npm run dev          # Vite dev server，http://127.0.0.1:5173/ui/
                      # 其 proxy 把 /ui/api + /ingestion 转发到 core
 ```
 
+登录用的 user token 在 **core** 侧创建 —— 明文只在创建时显示一次，
+请存入密码管理器：
+
+```bash
+# 在 core 仓库内执行
+python scripts/manage_users.py create <username> --role admin
+```
+
 用 `KB_UI_API_TARGET` 指向非默认 core：
 
 ```bash

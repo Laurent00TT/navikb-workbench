@@ -284,7 +284,7 @@ export function ExploreView({
 
         {hasResults ? (
           <div className="hit-list" role="list">
-            {unified.map((hit) => (
+            {unified.map((hit, index) => (
               <button
                 key={hit.key}
                 type="button"
@@ -292,6 +292,7 @@ export function ExploreView({
                 role="listitem"
                 onClick={hit.onSelect}
                 title={`${hit.doc_name} ${hit.page_label}`}
+                style={{ animationDelay: `${Math.min(index, 9) * 60}ms` }}
               >
                 <span className="hit-kind-icon">
                   {hit.kind === "evidence" ? <FileText size={14} /> :
@@ -316,6 +317,11 @@ export function ExploreView({
                 <ChevronDown size={14} className="hit-chevron" />
               </button>
             ))}
+            <p className="explore-statline" key={`stat-${result?.query ?? ""}`}>
+              {counts.pointer + counts.evidence + counts.suggested} hits · <b>nav {counts.pointer}</b> ·
+              evidence {counts.evidence} · suggested {counts.suggested}
+              {result?.routing_reason ? <> · routing: {result.routing_reason}</> : null}
+            </p>
           </div>
         ) : (
           <div className="empty-hit-list">

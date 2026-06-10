@@ -10,7 +10,8 @@ import { ExploreView } from "./views/ExploreView";
 import { IngestView } from "./views/IngestView";
 import { LibraryView } from "./views/LibraryView";
 import { LoginScreen } from "./views/LoginScreen";
-import { Sidebar, type TabKey } from "./views/Sidebar";
+import { Sidebar } from "./views/Sidebar";
+import { Topbar, type TabKey } from "./views/Topbar";
 
 import type { DocumentItem, TocEntry } from "./types";
 
@@ -73,68 +74,74 @@ export function App() {
 
   return (
     <div className="app-shell">
-      <Sidebar
+      <Topbar
         user={session.user}
         activeTab={activeTab}
-        documents={library.documents}
         status={session.status}
-        selectedDocId={library.selectedDoc?.doc_id ?? null}
         onTabChange={setActiveTab}
-        onSelectDocument={selectDocumentAndOpenLibrary}
         onLogout={session.logout}
-        onDeleteDocuments={library.deleteDocuments}
-        onRestoreDocuments={library.restoreDocuments}
       />
-      <main className="main-surface">
-        {activeTab === "explore" ? (
-          <ExploreView
-            query={search.query}
-            topK={search.topK}
-            result={search.result}
-            loading={search.searchLoading}
-            error={search.searchError}
-            onQueryChange={search.setQuery}
-            onTopKChange={search.setTopK}
-            onSearch={runSearchAndPinFirstHit}
-            onSelectEvidence={inspected.selectEvidence}
-            onSelectNav={inspected.selectNav}
-            onSelectFetch={inspected.selectFetch}
-          />
-        ) : null}
-        {activeTab === "library" ? (
-          <LibraryView
-            selectedDoc={library.selectedDoc}
-            toc={library.toc}
-            loading={library.tocLoading}
-            onSelectToc={onSelectToc}
-            onDeleteDocuments={library.deleteDocuments}
-            onRestoreDocuments={library.restoreDocuments}
-            onOpenSource={openSourceDoc}
-          />
-        ) : null}
-        {activeTab === "ingest" ? (
-          <IngestView
-            uploading={ingestion.uploading}
-            uploadError={ingestion.uploadError}
-            currentJob={ingestion.currentJob}
-            events={ingestion.events}
-            rejected={ingestion.rejected}
-            onUploadBatch={ingestion.uploadBatchPdfs}
-            onRefreshJob={ingestion.refreshJob}
-          />
-        ) : null}
-      </main>
-      <EvidenceInspector
-        selectedPage={inspected.selectedPage}
-        selectedRange={inspected.selectedRange}
-        pageError={inspected.pageError}
-        pageNotice={inspected.pageNotice}
-        onPageStep={inspected.stepSelectedPage}
-        onCopyCitation={inspected.copyCitation}
-        loadPageImage={session.api ? (id, n) => session.api!.pageImageBlobUrl(id, n) : undefined}
-        hasSource={inspectedHasSource}
-        onOpenSource={openSourceDoc}
-      />
+      <div className="app-cols">
+        <Sidebar
+          documents={library.documents}
+          status={session.status}
+          selectedDocId={library.selectedDoc?.doc_id ?? null}
+          onTabChange={setActiveTab}
+          onSelectDocument={selectDocumentAndOpenLibrary}
+          onDeleteDocuments={library.deleteDocuments}
+          onRestoreDocuments={library.restoreDocuments}
+        />
+        <main className="main-surface">
+          {activeTab === "explore" ? (
+            <ExploreView
+              query={search.query}
+              topK={search.topK}
+              result={search.result}
+              loading={search.searchLoading}
+              error={search.searchError}
+              onQueryChange={search.setQuery}
+              onTopKChange={search.setTopK}
+              onSearch={runSearchAndPinFirstHit}
+              onSelectEvidence={inspected.selectEvidence}
+              onSelectNav={inspected.selectNav}
+              onSelectFetch={inspected.selectFetch}
+            />
+          ) : null}
+          {activeTab === "library" ? (
+            <LibraryView
+              selectedDoc={library.selectedDoc}
+              toc={library.toc}
+              loading={library.tocLoading}
+              onSelectToc={onSelectToc}
+              onDeleteDocuments={library.deleteDocuments}
+              onRestoreDocuments={library.restoreDocuments}
+              onOpenSource={openSourceDoc}
+            />
+          ) : null}
+          {activeTab === "ingest" ? (
+            <IngestView
+              uploading={ingestion.uploading}
+              uploadError={ingestion.uploadError}
+              currentJob={ingestion.currentJob}
+              events={ingestion.events}
+              rejected={ingestion.rejected}
+              onUploadBatch={ingestion.uploadBatchPdfs}
+              onRefreshJob={ingestion.refreshJob}
+            />
+          ) : null}
+        </main>
+        <EvidenceInspector
+          selectedPage={inspected.selectedPage}
+          selectedRange={inspected.selectedRange}
+          pageError={inspected.pageError}
+          pageNotice={inspected.pageNotice}
+          onPageStep={inspected.stepSelectedPage}
+          onCopyCitation={inspected.copyCitation}
+          loadPageImage={session.api ? (id, n) => session.api!.pageImageBlobUrl(id, n) : undefined}
+          hasSource={inspectedHasSource}
+          onOpenSource={openSourceDoc}
+        />
+      </div>
     </div>
   );
 }

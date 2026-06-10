@@ -1,47 +1,31 @@
 import {
   Database,
   File,
-  FileSearch,
   Filter,
-  Library,
   ListChecks,
-  LogOut,
   Plus,
   RotateCcw,
-  Send,
-  ShieldCheck,
-  Trash2,
-  UploadCloud
+  Trash2
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Banner } from "../components/Banner";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { useDocDeletion } from "../hooks/useDocDeletion";
-import type { CurrentUser, DocumentItem, ServerStatus } from "../types";
-
-export type TabKey = "explore" | "library" | "ingest";
+import type { DocumentItem, ServerStatus } from "../types";
+import type { TabKey } from "./Topbar";
 
 interface SidebarProps {
-  user: CurrentUser;
-  activeTab: TabKey;
   documents: DocumentItem[];
   status: ServerStatus | null;
   selectedDocId: string | null;
   onTabChange: (tab: TabKey) => void;
   onSelectDocument: (doc: DocumentItem) => void;
-  onLogout: () => void;
   onDeleteDocuments: (
     docIds: string[]
   ) => Promise<{ ok: string[]; failed: { id: string; error: string }[] }>;
   onRestoreDocuments: (docIds: string[]) => Promise<void>;
 }
-
-const tabs: Array<{ key: TabKey; label: string; icon: typeof FileSearch }> = [
-  { key: "explore", label: "Explore", icon: FileSearch },
-  { key: "library", label: "Library", icon: Library },
-  { key: "ingest", label: "Ingest", icon: UploadCloud }
-];
 
 /** Strip the "_NNN.pdf" suffix some corpora use to encode page-split files
  *  back into a shared prefix. Returns the prefix used for soft grouping. */
@@ -50,14 +34,11 @@ function groupKey(name: string): string {
 }
 
 export function Sidebar({
-  user,
-  activeTab,
   documents,
   status,
   selectedDocId,
   onTabChange,
   onSelectDocument,
-  onLogout,
   onDeleteDocuments,
   onRestoreDocuments
 }: SidebarProps) {
@@ -148,51 +129,6 @@ export function Sidebar({
 
   return (
     <aside className="sidebar">
-      <div className="app-title">
-        <div className="logo">
-          <Send size={19} fill="currentColor" />
-        </div>
-        <div>
-          <h1>NaviKB</h1>
-        </div>
-      </div>
-
-      <section className="auth-card">
-        <div className="auth-status">
-          <span>
-            <ShieldCheck size={16} /> Token auth
-          </span>
-          <strong>
-            <span className="dot ok" /> Valid
-          </strong>
-        </div>
-        <div className="endpoint">
-          <span>Local endpoint</span>
-          <strong>
-            http://127.0.0.1:8000 <span className={status?.meta_db_ready ? "dot ok" : "dot warn"} />
-          </strong>
-        </div>
-        <div className="user-line">
-          {user.username} <span className="role-chip">{user.role}</span>
-        </div>
-      </section>
-
-      <nav className="tab-list segmented" aria-label="Workbench views">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.key}
-              className={activeTab === tab.key ? "tab-button active" : "tab-button"}
-              onClick={() => onTabChange(tab.key)}
-            >
-              <Icon size={18} />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </nav>
-
       <div className="doc-list">
         <div className="list-title-row">
           <span className="list-title">
@@ -338,11 +274,6 @@ export function Sidebar({
           title={status?.hybrid_ready ? "Hybrid navigator ready" : "Hybrid navigator not ready"}
         />
       </section>
-
-      <button className="logout-button" onClick={onLogout}>
-        <LogOut size={15} />
-        <span>Sign out</span>
-      </button>
 
       {del.pendingDelete ? (
         <ConfirmDialog

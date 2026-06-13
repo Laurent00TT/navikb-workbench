@@ -4,6 +4,7 @@ import type {
   HybridSearchResponse,
   IngestionEvent,
   JobDetail,
+  LogEntry,
   PageRangePreview,
   PagePreview,
   ServerStatus,
@@ -148,6 +149,36 @@ export function createApiClient(token: string, fetcher: FetchLike = fetch) {
     job: (jobId: string) => request<JobDetail>(`/ingestion/jobs/${encodeURIComponent(jobId)}`),
     events: (jobId: string, afterId = 0) => request<{ events: IngestionEvent[] }>(
       `/ingestion/jobs/${encodeURIComponent(jobId)}/events?after_id=${afterId}`
-    )
+    ),
+    /** Newest-first list of the caller's jobs (each with its items) — lets
+     *  the Ingest queue survive a page refresh instead of living only in
+     *  React state. activeOnly narrows to queued/running/cancelling. */
+    listJobs: (opts: { activeOnly?: boolean; limit?: number } = {}) => request<{
+      jobs: JobDetail[];
+      total: number;
+    }>(
+      `/ingestion/jobs?active_only=${opts.activeOnly ? "true" : "false"}&limit=${opts.limit ?? 20}`
+    ),
+    /** Requeue every failed item of the job (backend resets attempt=0). */
+    retryJob: (jobId: string) => request<{ retried_items: number }>(
+      `/ingestion/jobs/${encodeURIComponent(jobId)}/retry`,
+      { method: "POST" }
+    ),
+    /** Unified log feed (job events + structured trace tail) for the Logs tab. */
+    logs: (opts: { source?: "all" | "jobs" | "trace"; level?: string; afterId?: number; limit?: number } = {}) =>
+      request<{ entries: LogEntry[]; newest_job_event_id: number; total: number }>(
+        `/ui/api/logs?source=${opts.source ?? "all"}&level=${encodeURIComponent(opts.level ?? "")}` +
+        `&after_id=${opts.afterId ?? 0}&limit=${opts.limit ?? 200}`
+      ),
+    /** Mint a short-lived bearer-free URL for the original PDF. A new tab
+     *  can navigate to it directly — unlike blob URLs this survives PDF
+     *  viewer extensions (Adobe) and their byte-range requests. */
+    sourceTicketUrl: async (docId: string) => {
+      const body = await request<{ url: string; expires_in_s: number; doc_name: string }>(
+        `/ui/api/documents/${encodeURIComponent(docId)}/source_ticket`,
+        { method: "POST" }
+      );
+      return body.url;
+    }
   };
 }

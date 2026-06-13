@@ -1,8 +1,8 @@
-import { FileSearch, Library, LogOut, UploadCloud } from "lucide-react";
+import { FileSearch, Library, LogOut, ScrollText, UploadCloud } from "lucide-react";
 
 import type { CurrentUser, ServerStatus } from "../types";
 
-export type TabKey = "explore" | "library" | "ingest";
+export type TabKey = "explore" | "library" | "ingest" | "logs";
 
 interface TopbarProps {
   user: CurrentUser;
@@ -15,7 +15,8 @@ interface TopbarProps {
 const tabs: Array<{ key: TabKey; label: string; icon: typeof FileSearch }> = [
   { key: "explore", label: "Explore", icon: FileSearch },
   { key: "library", label: "Library", icon: Library },
-  { key: "ingest", label: "Ingest", icon: UploadCloud }
+  { key: "ingest", label: "Ingest", icon: UploadCloud },
+  { key: "logs", label: "Logs", icon: ScrollText }
 ];
 
 /** Top structural bar: wordmark, view tabs (Klein-blue underline slides in),

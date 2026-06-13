@@ -1,17 +1,21 @@
 import {
   AlertTriangle,
+  AlignLeft,
   ChevronLeft,
   ChevronRight,
   Copy,
   ExternalLink,
   FileText,
   Image as ImageIcon,
+  LayoutTemplate,
   Maximize2,
   Sparkles,
+  Table,
   X,
   ZoomIn
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { Banner } from "../components/Banner";
 import type { PageRangePreview, PagePreview } from "../types";
@@ -32,6 +36,20 @@ interface EvidenceInspectorProps {
   hasSource?: boolean;
   /** Open that source PDF in a new tab. */
   onOpenSource?: (docId: string) => void;
+}
+
+/** Line-art glyph for the page's modality — the left compartment of the
+ *  page-type stamp. Values come from the ingest pipeline: "table" (page has
+ *  tables), "mixed" (text + image blocks), "text" (default). */
+function pageTypeIcon(pageType: string | undefined) {
+  switch (pageType) {
+    case "table":
+      return <Table size={12} />;
+    case "mixed":
+      return <LayoutTemplate size={12} />;
+    default:
+      return <AlignLeft size={12} />;
+  }
 }
 
 /** Collapse the raw evidence.text into something a human can read.
@@ -301,9 +319,19 @@ export function EvidenceInspector({
                     : "Original page"}
                 </span>
               </div>
-              <div>
+              <div className="meta-inline">
                 <label>Page type</label>
-                <span>{selectedPage.page_type || "text"}</span>
+                <span
+                  className="pt-stamp"
+                  title={`Page modality: ${selectedPage.page_type || "text"}`}
+                >
+                  <span className="pt-stamp-ic" aria-hidden="true">
+                    {pageTypeIcon(selectedPage.page_type)}
+                  </span>
+                  <span className="pt-stamp-word">
+                    {selectedPage.page_type || "text"}
+                  </span>
+                </span>
               </div>
               {selectedPage.evidence.text_truncated ? (
                 <div className="evidence-warning">
@@ -343,32 +371,39 @@ export function EvidenceInspector({
         </div>
       )}
 
-      {lightbox && imageUrl && selectedPage ? (
-        <div className="image-lightbox" role="dialog" aria-modal="true" onClick={() => setLightbox(false)}>
-          <div className="lightbox-toolbar" onClick={(event) => event.stopPropagation()}>
-            <span className="lightbox-caption">
-              {selectedPage.doc_name || selectedPage.doc_id} · p{selectedPage.page_num}
-            </span>
-            <div className="lightbox-zoom">
-              <button type="button" onClick={() => setLbZoom((z) => Math.max(40, z - 25))} title="Zoom out">−</button>
-              <span>{lbZoom}%</span>
-              <button type="button" onClick={() => setLbZoom((z) => Math.min(500, z + 25))} title="Zoom in">+</button>
-              <button type="button" className="lightbox-reset" onClick={() => setLbZoom(100)}>Reset</button>
-            </div>
-            <button type="button" className="lightbox-close" onClick={() => setLightbox(false)} title="Close (Esc)">
-              <X size={18} />
-            </button>
-          </div>
-          <div className="lightbox-stage" onClick={() => setLightbox(false)}>
-            <img
-              src={imageUrl}
-              alt={`${selectedPage.doc_name || selectedPage.doc_id} page ${selectedPage.page_num} full size`}
-              style={{ height: `${(88 * lbZoom) / 100}vh`, width: "auto", maxWidth: "none" }}
-              onClick={(event) => event.stopPropagation()}
-            />
-          </div>
-        </div>
-      ) : null}
+      {lightbox && imageUrl && selectedPage
+        ? // Portal to <body>: the inspector aside animates in with a CSS
+          // transform, and a transformed ancestor becomes the containing
+          // block for position:fixed — which pinned this "fullscreen"
+          // overlay inside the 408px side panel instead of the viewport.
+          createPortal(
+            <div className="image-lightbox" role="dialog" aria-modal="true" onClick={() => setLightbox(false)}>
+              <div className="lightbox-toolbar" onClick={(event) => event.stopPropagation()}>
+                <span className="lightbox-caption">
+                  {selectedPage.doc_name || selectedPage.doc_id} · p{selectedPage.page_num}
+                </span>
+                <div className="lightbox-zoom">
+                  <button type="button" onClick={() => setLbZoom((z) => Math.max(40, z - 25))} title="Zoom out">−</button>
+                  <span>{lbZoom}%</span>
+                  <button type="button" onClick={() => setLbZoom((z) => Math.min(500, z + 25))} title="Zoom in">+</button>
+                  <button type="button" className="lightbox-reset" onClick={() => setLbZoom(100)}>Reset</button>
+                </div>
+                <button type="button" className="lightbox-close" onClick={() => setLightbox(false)} title="Close (Esc)">
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="lightbox-stage" onClick={() => setLightbox(false)}>
+                <img
+                  src={imageUrl}
+                  alt={`${selectedPage.doc_name || selectedPage.doc_id} page ${selectedPage.page_num} full size`}
+                  style={{ height: `${(88 * lbZoom) / 100}vh`, width: "auto", maxWidth: "none" }}
+                  onClick={(event) => event.stopPropagation()}
+                />
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
     </aside>
   );
 }

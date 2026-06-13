@@ -10,7 +10,11 @@ export default defineConfig({
     port: 5173,
     proxy: {
       "/ui/api": apiTarget,
-      "/ingestion": apiTarget
+      "/ingestion": apiTarget,
+      // Ticketed source-PDF view URLs (minted by /ui/api/.../source_ticket).
+      // Relative on purpose — same-origin in production; the dev server
+      // must forward them like the API paths or new tabs 404 against Vite.
+      "/source": apiTarget
     }
   },
   test: {

@@ -162,3 +162,28 @@ export interface JobDetail {
   job: IngestionJob;
   items: IngestionItem[];
 }
+
+/** One row of the unified Logs feed (/ui/api/logs).
+ *  source "jobs" rows come from the ingestion job event table and carry
+ *  event_id/job_id/item_id; source "trace:serve" / "trace:worker" rows are
+ *  the structured kb_trace tail and have event_id = null. */
+export interface LogEntry {
+  source: string;
+  event_id: number | null;
+  ts: string | null;
+  level: string;
+  event: string;
+  message: string;
+  job_id: string | null;
+  item_id: string | null;
+  payload: Record<string, unknown>;
+}
+
+/** Stage of one ingest item, derived client-side from its job events. */
+export interface ItemStage {
+  phase: "queued" | "parsing" | "embedding" | "finalizing" | "done" | "failed" | "skipped";
+  pageNum?: number;
+  pagesTotal?: number;
+  error?: string;
+  retryable?: boolean;
+}

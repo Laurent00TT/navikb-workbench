@@ -10,6 +10,7 @@ import { ExploreView } from "./views/ExploreView";
 import { IngestView } from "./views/IngestView";
 import { LibraryView } from "./views/LibraryView";
 import { LoginScreen } from "./views/LoginScreen";
+import { LogsView } from "./views/LogsView";
 import { Sidebar } from "./views/Sidebar";
 import { Topbar, type TabKey } from "./views/Topbar";
 
@@ -56,10 +57,13 @@ export function App() {
   async function openSourceDoc(docId: string) {
     if (!session.api) return;
     // Open the tab synchronously inside the click gesture so the popup blocker
-    // doesn't eat it; fill it once the auth'd PDF blob is ready.
+    // doesn't eat it; fill it once the short-lived ticket URL is minted.
+    // A real same-origin URL (not a blob:) so PDF viewer extensions (Adobe)
+    // and their byte-range requests work — blob URLs created in this
+    // document hung forever inside the extension's viewer.
     const tab = window.open("", "_blank");
     try {
-      const url = await session.api.sourceBlobUrl(docId);
+      const url = await session.api.sourceTicketUrl(docId);
       if (tab) tab.location.href = url;
       else window.open(url, "_blank");
     } catch {
@@ -122,13 +126,19 @@ export function App() {
             <IngestView
               uploading={ingestion.uploading}
               uploadError={ingestion.uploadError}
+              jobs={ingestion.jobs}
               currentJob={ingestion.currentJob}
               events={ingestion.events}
+              stages={ingestion.stages}
               rejected={ingestion.rejected}
               onUploadBatch={ingestion.uploadBatchPdfs}
               onRefreshJob={ingestion.refreshJob}
+              onRetryJob={ingestion.retryJob}
+              onRetryAllFailed={ingestion.retryAllFailed}
+              onSelectJob={ingestion.selectJob}
             />
           ) : null}
+          {activeTab === "logs" ? <LogsView api={session.api} /> : null}
         </main>
         <EvidenceInspector
           selectedPage={inspected.selectedPage}
